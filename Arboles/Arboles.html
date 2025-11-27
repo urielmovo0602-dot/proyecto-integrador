@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Árboles Binarios - Estilo Glassmorphism</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Color Palette & Variables --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-blur: 12px;
+            
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            
+            /* Nodos */
+            --node-grad-start: #3b82f6;
+            --node-grad-end: #8b5cf6;
+            --node-shadow: rgba(59, 130, 246, 0.5);
+            
+            /* Acciones */
+            --color-accent: #6366f1;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #f59e0b;
+            
+            --edge-color: rgba(255, 255, 255, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif; /* Fuente más moderna */
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            font-size: 16px;
+            background-attachment: fixed; /* El fondo no se mueve al hacer scroll */
+        }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr; /* Más espacio para el árbol */
+            gap: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            grid-column: 1 / -1;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+            font-weight: 300;
+        }
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- Árbol Visualization --- */
+        .arbol-container {
+            width: 100%;
+            min-height: 550px;
+            background: rgba(0, 0, 0, 0.2); /* Fondo más oscuro para contraste */
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden; /* Importante para que los nodos no se salgan */
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .node {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--node-grad-start), var(--node-grad-end));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 0 15px var(--node-shadow), inset 0 2px 4px rgba(255,255,255,0.3);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            z-index: 10;
+            user-select: none;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .node:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 25px var(--node-shadow);
+            z-index: 20;
+        }
+
+        .node.highlight {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 0 20px #f59e0b;
+            border-color: #fcd34d;
+        }
+
+        .node.root {
+            border: 2px solid #fff;
+        }
+
+        .node.delete-ready {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            box-shadow: 0 0 20px #ef4444;
+            animation: shake 0.5s infinite;
+        }
+
+        /* --- Controls --- */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        button i { color: var(--node-grad-start); }
+
+        button.active {
+            background: var(--color-danger);
+            color: white;
+            border-color: transparent;
+        }
+        button.active i { color: white; }
+
+        /* Estilos específicos para botones de acción principal */
+        #insertBtn {
+            background: var(--color-accent);
+            border: none;
+        }
+        #insertBtn:hover { background: #4f46e5; }
+        #insertBtn i { color: white; }
+
+        .input-group {
+            display: flex;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        input {
+            padding: 15px 20px;
+            border: none;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input::placeholder { color: rgba(255,255,255,0.4); }
+
+        .input-btn {
+            border-radius: 0;
+            padding: 0 25px;
+        }
+
+        /* --- Status Messages --- */
+        .status {
+            text-align: center;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .info { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .success { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .warning { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        /* --- Recorridos --- */
+        .recorridos {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .recorrido-result {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 12px 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .recorrido-result h4 {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .recorrido-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .recorrido-item {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* --- Info Panel --- */
+        .info-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .info-panel h3 {
+            margin-bottom: 15px;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-panel h3 i { color: var(--color-warning); }
+
+        .info-panel ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-panel li {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-panel li::before {
+            content: '▹';
+            position: absolute;
+            left: 0;
+            color: var(--color-accent);
+        }
+
+        /* --- Footer --- */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .footer-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .footer-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 25px;
+            border-radius: 50px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: 0.3s;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid transparent;
+        }
+
+        .footer-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        /* --- Delete Mode Indicator --- */
+        .delete-mode-indicator {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            display: none;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px) rotate(-3deg); }
+            75% { transform: translateX(3px) rotate(3deg); }
+        }
+
+        /* --- Responsiveness --- */
+        @media (max-width: 1024px) {
+            .container { grid-template-columns: 1fr; }
+            .arbol-container { min-height: 400px; }
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .container { padding: 20px; }
+            .controls { grid-template-columns: 1fr; }
+            .input-group { flex-direction: column; }
+            .input-btn { width: 100%; padding: 12px; border-radius: 0 0 12px 12px; }
+            input { border-radius: 12px 12px 0 0; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="delete-mode-indicator" id="deleteModeIndicator">
+        <i class="fas fa-trash-alt"></i> Modo Eliminación Activado
+    </div>
+
+    <div class="container">
+        <h1>Árbol Binario Interactivo</h1>
+        <p class="subtitle">Visualización dinámica de estructuras de datos jerárquicas</p>
+
+        <div class="left-panel">
+            <div class="input-group">
+                <input type="number" id="elementoInput" placeholder="Ingresa un número (0-999)" min="0" max="999">
+                <button class="input-btn" id="insertBtn">
+                    <i class="fas fa-plus"></i> Insertar Nodo
+                </button>
+            </div>
+
+            <div class="arbol-container">
+                <canvas id="canvas"></canvas>
+                </div>
+
+            <div class="status info" id="status">
+                <i class="fas fa-info-circle" style="margin-right: 8px;"></i> Listo para interactuar
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="controls">
+                <button id="searchBtn"><i class="fas fa-search"></i> Buscar</button>
+                <button id="deleteBtn"><i class="fas fa-eraser"></i> Eliminar</button>
+                <button id="minBtn"><i class="fas fa-sort-amount-down"></i> Mínimo</button>
+                <button id="maxBtn"><i class="fas fa-sort-amount-up"></i> Máximo</button>
+                <button id="randomBtn"><i class="fas fa-dice"></i> Aleatorio</button>
+                <button id="clearBtn"><i class="fas fa-trash"></i> Limpiar</button>
+            </div>
+
+            <div class="recorridos">
+                <div class="recorrido-result">
+                    <h4><i class="fas fa-stream"></i> Pre-Orden</h4>
+                    <div class="recorrido-items" id="preOrderResult"></div>
+                </div>
+                <div class="recorrido-result">
+                    <h4><i class="fas fa-stream"></i> In-Orden</h4>
+                    <div class="recorrido-items" id="inOrderResult"></div>
+                </div>
+                <div class="recorrido-result">
+                    <h4><i class="fas fa-stream"></i> Post-Orden</h4>
+                    <div class="recorrido-items" id="postOrderResult"></div>
+                </div>
+                <div class="recorrido-result">
+                    <h4><i class="fas fa-layer-group"></i> Por Niveles</h4>
+                    <div class="recorrido-items" id="levelOrderResult"></div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3><i class="fas fa-lightbulb"></i> Detalles</h3>
+                <ul>
+                    <li><strong>Nodos:</strong> Se ordenan automáticamente (menores a la izquierda).</li>
+                    <li><strong>Buscar:</strong> Resalta la ruta en color ámbar.</li>
+                    <li><strong>Eliminar:</strong> Activa el modo y haz clic en un nodo.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+           
+    </footer>
+
+    <script>
+        // --- MISMOS SCRIPTS QUE TU CÓDIGO ORIGINAL ---
+        // Solo he ajustado el color de las aristas en la función dibujarAristas
+        // para que coincida con el CSS (--edge-color)
+        
+        class Nodo {
+            constructor(valor) {
+                this.valor = valor;
+                this.izquierdo = null;
+                this.derecho = null;
+                this.x = 0;
+                this.y = 0;
+            }
+        }
+
+        class ArbolBinario {
+            constructor() { this.raiz = null; }
+
+            insertar(valor) {
+                const nuevoNodo = new Nodo(valor);
+                if (this.raiz === null) {
+                    this.raiz = nuevoNodo;
+                } else {
+                    this._insertarNodo(this.raiz, nuevoNodo);
+                }
+                return nuevoNodo;
+            }
+
+            _insertarNodo(nodo, nuevoNodo) {
+                if (nuevoNodo.valor < nodo.valor) {
+                    if (nodo.izquierdo === null) nodo.izquierdo = nuevoNodo;
+                    else this._insertarNodo(nodo.izquierdo, nuevoNodo);
+                } else {
+                    if (nodo.derecho === null) nodo.derecho = nuevoNodo;
+                    else this._insertarNodo(nodo.derecho, nuevoNodo);
+                }
+            }
+
+            eliminar(valor) { this.raiz = this._eliminarNodo(this.raiz, valor); }
+
+            _eliminarNodo(nodo, valor) {
+                if (nodo === null) return null;
+                if (valor < nodo.valor) {
+                    nodo.izquierdo = this._eliminarNodo(nodo.izquierdo, valor);
+                } else if (valor > nodo.valor) {
+                    nodo.derecho = this._eliminarNodo(nodo.derecho, valor);
+                } else {
+                    if (nodo.izquierdo === null && nodo.derecho === null) return null;
+                    else if (nodo.izquierdo === null) return nodo.derecho;
+                    else if (nodo.derecho === null) return nodo.izquierdo;
+                    else {
+                        const sucesor = this._encontrarMinNodo(nodo.derecho);
+                        nodo.valor = sucesor.valor;
+                        nodo.derecho = this._eliminarNodo(nodo.derecho, sucesor.valor);
+                    }
+                }
+                return nodo;
+            }
+
+            buscar(valor) { return this._buscarNodo(this.raiz, valor); }
+
+            _buscarNodo(nodo, valor) {
+                if (nodo === null) return null;
+                if (valor === nodo.valor) return nodo;
+                if (valor < nodo.valor) return this._buscarNodo(nodo.izquierdo, valor);
+                else return this._buscarNodo(nodo.derecho, valor);
+            }
+
+            encontrarMin() { return this._encontrarMinNodo(this.raiz); }
+            _encontrarMinNodo(nodo) {
+                if (nodo === null) return null;
+                while (nodo.izquierdo !== null) nodo = nodo.izquierdo;
+                return nodo;
+            }
+
+            encontrarMax() { return this._encontrarMaxNodo(this.raiz); }
+            _encontrarMaxNodo(nodo) {
+                if (nodo === null) return null;
+                while (nodo.derecho !== null) nodo = nodo.derecho;
+                return nodo;
+            }
+
+            preOrden() { const r = []; this._preOrden(this.raiz, r); return r; }
+            _preOrden(n, r) { if (n) { r.push(n.valor); this._preOrden(n.izquierdo, r); this._preOrden(n.derecho, r); } }
+
+            inOrden() { const r = []; this._inOrden(this.raiz, r); return r; }
+            _inOrden(n, r) { if (n) { this._inOrden(n.izquierdo, r); r.push(n.valor); this._inOrden(n.derecho, r); } }
+
+            postOrden() { const r = []; this._postOrden(this.raiz, r); return r; }
+            _postOrden(n, r) { if (n) { this._postOrden(n.izquierdo, r); this._postOrden(n.derecho, r); r.push(n.valor); } }
+
+            porNiveles() {
+                const r = [];
+                if (!this.raiz) return r;
+                const c = [this.raiz];
+                while (c.length > 0) {
+                    const n = c.shift();
+                    r.push(n.valor);
+                    if (n.izquierdo) c.push(n.izquierdo);
+                    if (n.derecho) c.push(n.derecho);
+                }
+                return r;
+            }
+
+            limpiar() { this.raiz = null; }
+
+            generarAleatorio(cantidad = 10) {
+                this.limpiar();
+                const numeros = new Set();
+                while (numeros.size < cantidad) {
+                    const num = Math.floor(Math.random() * 100) + 1;
+                    if (!numeros.has(num)) {
+                        numeros.add(num);
+                        this.insertar(num);
+                    }
+                }
+            }
+        }
+
+        const arbol = new ArbolBinario();
+        let modoEliminacion = false;
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const elementoInput = document.getElementById('elementoInput');
+        const statusElement = document.getElementById('status');
+        const insertBtn = document.getElementById('insertBtn');
+        const searchBtn = document.getElementById('searchBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const minBtn = document.getElementById('minBtn');
+        const maxBtn = document.getElementById('maxBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const deleteModeIndicator = document.getElementById('deleteModeIndicator');
+        const preOrderResult = document.getElementById('preOrderResult');
+        const inOrderResult = document.getElementById('inOrderResult');
+        const postOrderResult = document.getElementById('postOrderResult');
+        const levelOrderResult = document.getElementById('levelOrderResult');
+
+        function configurarCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+
+        window.addEventListener('resize', () => {
+            configurarCanvas();
+            dibujarArbol();
+        });
+        configurarCanvas();
+
+        function dibujarArbol() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (arbol.raiz) {
+                calcularPosiciones(arbol.raiz, canvas.width / 2, 50, canvas.width / 4);
+                dibujarAristas(arbol.raiz);
+                dibujarNodos(arbol.raiz);
+            } else {
+                limpiarNodosVisuales();
+            }
+            actualizarRecorridos();
+        }
+
+        function calcularPosiciones(nodo, x, y, espacio) {
+            if (nodo === null) return;
+            nodo.x = x;
+            nodo.y = y;
+            if (nodo.izquierdo !== null) calcularPosiciones(nodo.izquierdo, x - espacio, y + 80, espacio / 1.9);
+            if (nodo.derecho !== null) calcularPosiciones(nodo.derecho, x + espacio, y + 80, espacio / 1.9);
+        }
+
+        function dibujarAristas(nodo) {
+            if (nodo === null) return;
+            // Actualizado para usar variable CSS
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; 
+            ctx.lineWidth = 2;
+
+            if (nodo.izquierdo !== null) {
+                ctx.beginPath();
+                ctx.moveTo(nodo.x, nodo.y);
+                ctx.lineTo(nodo.izquierdo.x, nodo.izquierdo.y);
+                ctx.stroke();
+                dibujarAristas(nodo.izquierdo);
+            }
+
+            if (nodo.derecho !== null) {
+                ctx.beginPath();
+                ctx.moveTo(nodo.x, nodo.y);
+                ctx.lineTo(nodo.derecho.x, nodo.derecho.y);
+                ctx.stroke();
+                dibujarAristas(nodo.derecho);
+            }
+        }
+
+        function dibujarNodos(nodo) {
+            if (nodo === null) return;
+            const container = document.querySelector('.arbol-container');
+            let nodoElement = document.querySelector(`.node[data-valor="${nodo.valor}"]`);
+
+            if (!nodoElement) {
+                nodoElement = document.createElement('div');
+                nodoElement.className = 'node';
+                nodoElement.setAttribute('data-valor', nodo.valor);
+                nodoElement.textContent = nodo.valor;
+                container.appendChild(nodoElement);
+                if (nodo === arbol.raiz) nodoElement.classList.add('root');
+                nodoElement.addEventListener('click', manejarClickNodo);
+            }
+
+            nodoElement.style.left = `${nodo.x - 22.5}px`; // Ajuste por tamaño de nodo (45px)
+            nodoElement.style.top = `${nodo.y - 22.5}px`;
+
+            // Verificar si hay nodos que ya no existen
+            const allNodes = document.querySelectorAll('.node');
+            allNodes.forEach(n => {
+                const v = parseInt(n.getAttribute('data-valor'));
+                if (!arbol.buscar(v)) n.remove();
+            });
+
+            nodoElement.classList.remove('highlight', 'delete-ready');
+            if (modoEliminacion) nodoElement.classList.add('delete-ready');
+
+            dibujarNodos(nodo.izquierdo);
+            dibujarNodos(nodo.derecho);
+        }
+
+        function manejarClickNodo(event) {
+            if (!modoEliminacion) return;
+            const nodoElement = event.target;
+            const valor = parseInt(nodoElement.getAttribute('data-valor'));
+            arbol.eliminar(valor);
+            mostrarMensaje(`Nodo ${valor} eliminado`, 'success');
+            salirModoEliminacion();
+            dibujarArbol();
+        }
+
+        function activarModoEliminacion() {
+            modoEliminacion = true;
+            deleteBtn.classList.add('active');
+            deleteModeIndicator.style.display = 'block';
+            mostrarMensaje('Haz clic en un nodo para eliminarlo', 'warning');
+            dibujarArbol(); // Para aplicar clases CSS
+        }
+
+        function salirModoEliminacion() {
+            modoEliminacion = false;
+            deleteBtn.classList.remove('active');
+            deleteModeIndicator.style.display = 'none';
+            dibujarArbol();
+        }
+
+        function actualizarRecorridos() {
+            preOrderResult.innerHTML = arbol.preOrden().map(val => `<div class="recorrido-item">${val}</div>`).join('');
+            inOrderResult.innerHTML = arbol.inOrden().map(val => `<div class="recorrido-item">${val}</div>`).join('');
+            postOrderResult.innerHTML = arbol.postOrden().map(val => `<div class="recorrido-item">${val}</div>`).join('');
+            levelOrderResult.innerHTML = arbol.porNiveles().map(val => `<div class="recorrido-item">${val}</div>`).join('');
+        }
+
+        function mostrarMensaje(mensaje, tipo = 'info') {
+            statusElement.innerHTML = `<i class="fas fa-${tipo === 'error' ? 'exclamation-circle' : (tipo === 'success' ? 'check-circle' : 'info-circle')}"></i> ${mensaje}`;
+            statusElement.className = 'status ' + tipo;
+            setTimeout(() => {
+                if(statusElement.className.includes(tipo)) {
+                    statusElement.className = 'status info';
+                    statusElement.innerHTML = '<i class="fas fa-info-circle"></i> Listo';
+                }
+            }, 3000);
+        }
+
+        function limpiarNodosVisuales() {
+            document.querySelectorAll('.node').forEach(nodo => nodo.remove());
+        }
+
+        // Listeners
+        insertBtn.addEventListener('click', () => {
+            const valor = parseInt(elementoInput.value);
+            if (isNaN(valor) || valor < 0 || valor > 999) {
+                mostrarMensaje('Ingresa un número entre 0 y 999', 'error');
+                return;
+            }
+            if (arbol.buscar(valor)) {
+                mostrarMensaje(`El valor ${valor} ya existe`, 'error');
+                return;
+            }
+            arbol.insertar(valor);
+            mostrarMensaje(`Valor ${valor} insertado`, 'success');
+            elementoInput.value = '';
+            dibujarArbol();
+        });
+
+        searchBtn.addEventListener('click', () => {
+            const valor = parseInt(elementoInput.value);
+            if (isNaN(valor)) { mostrarMensaje('Ingresa un número válido', 'error'); return; }
+            const nodo = arbol.buscar(valor);
+            if (nodo) {
+                mostrarMensaje(`Valor ${valor} encontrado`, 'success');
+                document.querySelectorAll('.node').forEach(n => {
+                    if (parseInt(n.getAttribute('data-valor')) === valor) n.classList.add('highlight');
+                });
+            } else {
+                mostrarMensaje(`Valor ${valor} no encontrado`, 'error');
+            }
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            if (modoEliminacion) { salirModoEliminacion(); mostrarMensaje('Modo eliminación cancelado', 'info'); }
+            else {
+                if (!arbol.raiz) { mostrarMensaje('El árbol está vacío', 'error'); return; }
+                activarModoEliminacion();
+            }
+        });
+
+        minBtn.addEventListener('click', () => {
+            const nodo = arbol.encontrarMin();
+            if (nodo) {
+                mostrarMensaje(`Mínimo: ${nodo.valor}`, 'success');
+                elementoInput.value = nodo.valor;
+            } else mostrarMensaje('Árbol vacío', 'error');
+        });
+
+        maxBtn.addEventListener('click', () => {
+            const nodo = arbol.encontrarMax();
+            if (nodo) {
+                mostrarMensaje(`Máximo: ${nodo.valor}`, 'success');
+                elementoInput.value = nodo.valor;
+            } else mostrarMensaje('Árbol vacío', 'error');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            arbol.limpiar();
+            dibujarArbol();
+            mostrarMensaje('Árbol limpiado', 'info');
+        });
+
+        randomBtn.addEventListener('click', () => {
+            arbol.generarAleatorio(10);
+            dibujarArbol();
+            mostrarMensaje('Árbol aleatorio generado', 'success');
+        });
+
+        // Inicializar
+        arbol.generarAleatorio(7);
+        setTimeout(dibujarArbol, 100);
+    </script>
+</body>
+</html>

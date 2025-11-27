@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Objeto Multimedia Colas - Glassmorphism</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Variables de Diseño (Tema Cyber/Glass) --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-blur: 12px;
+            
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            
+            /* Elementos de la Cola (Bloques de Energía) */
+            --item-grad-start: #06b6d4; /* Cyan */
+            --item-grad-end: #3b82f6;   /* Blue */
+            --item-shadow: rgba(6, 182, 212, 0.5);
+            
+            /* Indicadores */
+            --color-front: #10b981; /* Verde Neón */
+            --color-rear: #f43f5e;  /* Rosa Neón */
+
+            /* Acciones */
+            --color-accent: #6366f1;
+            --color-danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            font-size: 16px;
+            background-attachment: fixed;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #22d3ee, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* --- Contenedor Principal Glassmorphism --- */
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-columns: 1.3fr 0.7fr; /* Izquierda más ancha */
+            gap: 40px;
+        }
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- Toggles (Botones de cambio de modo) --- */
+        .mode-toggle {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Clase activa para toggles (si tu JS la usa) */
+        .toggle-btn.active {
+            background: var(--color-accent);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .capacity {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 15px;
+            border-radius: 12px;
+            width: fit-content;
+            margin: 0 auto;
+            border: 1px solid var(--glass-border);
+        }
+
+        .capacity span {
+            color: var(--color-front);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* --- Área de Visualización --- */
+        .cola-container {
+            width: 100%;
+            min-height: 350px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* Cola Lineal (Normal) */
+        .cola-normal {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-x: auto;
+            padding: 20px;
+            width: 100%;
+            min-height: 100px;
+            /* Scrollbar estilizado */
+            scrollbar-width: thin;
+            scrollbar-color: var(--color-accent) transparent;
+        }
+
+        /* IMPORTANTE: Tu JS debe generar los elementos con una clase. 
+           Aquí asumo que son DIVs dentro de .cola-normal */
+        .cola-normal div, .cola-circular div:not(.circular-track) {
+            min-width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, var(--item-grad-start), var(--item-grad-end));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 0 15px var(--item-shadow);
+            border: 1px solid rgba(255,255,255,0.3);
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Animación de entrada */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        
+        .cola-normal div {
+            animation: popIn 0.4s ease forwards;
+        }
+
+        /* Cola Circular */
+        .cola-circular {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .circular-track {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px dashed rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+
+        /* Indicadores (Frente/Final) */
+        .indicadores {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .indicador {
+            font-size: 0.75rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+        }
+
+        .frente-ind { 
+            background: rgba(16, 185, 129, 0.15); 
+            color: var(--color-front); 
+            border: 1px solid var(--color-front);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+        }
+        .final-ind { 
+            background: rgba(244, 63, 94, 0.15); 
+            color: var(--color-rear); 
+            border: 1px solid var(--color-rear);
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
+        }
+
+        /* --- Input y Botones --- */
+        .input-group {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            margin-top: auto; /* Empuja hacia abajo */
+        }
+
+        input {
+            padding: 15px 20px;
+            border: none;
+            width: 100%;
+            background: transparent;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .input-btn {
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 0 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .input-btn:hover { 
+            background: #4f46e5; 
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+
+        /* --- Panel Derecho (Controles) --- */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button:not(.input-btn):not(.toggle-btn) {
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:not(.input-btn):not(.toggle-btn):hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Botón Eliminar (Específico) */
+        #dequeueBtn { 
+            background: rgba(239, 68, 68, 0.1); 
+            border-color: rgba(239, 68, 68, 0.3); 
+            color: #fca5a5; 
+        }
+        #dequeueBtn:hover { 
+            background: rgba(239, 68, 68, 0.25); 
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        #clearBtn { grid-column: span 2; }
+
+        /* --- Mensajes de Estado --- */
+        .status {
+            text-align: center;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid transparent;
+        }
+
+        .info { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.2); }
+
+        /* --- Panel de Información --- */
+        .info-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            flex-grow: 1;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 15px;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-panel h3::before {
+            content: '\f0eb'; /* Icono bombilla FontAwesome */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--color-accent);
+        }
+
+        .info-panel ul { list-style: none; }
+
+        .info-panel li {
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .info-panel li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--color-accent);
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        /* --- Footer --- */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+            .cola-container { min-height: 250px; }
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .container { padding: 20px; }
+            .mode-toggle { flex-direction: column; }
+            .toggle-btn { justify-content: center; }
+            .input-group { flex-direction: column; }
+            .input-btn { width: 100%; padding: 15px; }
+            input { text-align: center; }
+            .cola-normal div { min-width: 50px; height: 50px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Objeto Multimedia Colas</h1>
+    <p class="subtitle">Estructura de datos interactiva con iteradores Frente y Final</p>
+
+    <div class="container">
+        <div class="left-panel">
+            <div class="mode-toggle">
+                <div class="toggle-btn" id="toggleMode">
+                    <i class="fas fa-sync-alt"></i>
+                    <span id="modeText">Cambiar a Cola Circular</span>
+                </div>
+                <div class="toggle-btn fifo-lifo-toggle" id="toggleFifoLifo">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span id="fifoLifoText">Cambiar a LIFO</span>
+                </div>
+            </div>
+
+            <div class="capacity">Capacidad: <span id="capacity">10</span></div>
+
+            <div class="cola-container">
+                <div class="indicadores" id="indicadoresNormal">
+                    <div class="indicador frente-ind">Frente</div>
+                    <div class="indicador final-ind">Final</div>
+                </div>
+
+                <div class="cola-normal" id="colaNormal">
+                    </div>
+
+                <div class="cola-circular" id="colaCircular" style="display: none;">
+                    <div class="circular-track"></div>
+                    </div>
+            </div>
+
+            <div class="status info" id="status">
+                <i class="fas fa-info-circle" style="margin-right: 8px;"></i> Presiona un botón para interactuar
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="elementoInput" placeholder="Ingresa un elemento" maxlength="15">
+                <button class="input-btn" id="enqueueBtn">
+                    <i class="fas fa-plus"></i> Agregar
+                </button>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="controls">
+                <button id="dequeueBtn"><i class="fas fa-minus"></i> Eliminar</button>
+                <button id="frontBtn"><i class="fas fa-eye"></i> Frente</button>
+                <button id="rearBtn"><i class="fas fa-eye"></i> Final</button>
+                <button id="sizeBtn"><i class="fas fa-ruler-horizontal"></i> Tamaño</button>
+                <button id="clearBtn"><i class="fas fa-trash-alt"></i> Vaciar Cola</button>
+            </div>
+
+            <div class="info-panel">
+                <h3 id="infoTitle">Cola Sencilla</h3>
+                <ul id="infoList">
+                    </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Estructuras de Datos</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

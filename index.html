@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Estructuras - Diseño Split</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Mantenemos la paleta oscura/cyberpunk */
+            --bg-sidebar: #1e1e2e;
+            --bg-content: #282a36;
+            --card-bg: #44475a;
+            --text-main: #f8f8f2;
+            --text-muted: #a0a0a0;
+            
+            --accent-cyan: #8be9fd;
+            --accent-pink: #ff79c6;
+            --accent-green: #50fa7b;
+            --accent-purple: #bd93f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-content);
+            color: var(--text-main);
+            /* Layout Principal: Flexbox para dividir pantalla */
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- SECCIÓN IZQUIERDA (SIDEBAR) --- */
+        .sidebar {
+            width: 35%;
+            min-width: 320px;
+            background-color: var(--bg-sidebar);
+            padding: 60px 40px;
+            position: fixed; /* Fijo en pantalla */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            z-index: 10;
+        }
+
+        .header-content h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-content .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 40px;
+            border-left: 3px solid var(--accent-purple);
+            padding-left: 15px;
+        }
+
+        .author-badge {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: auto;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            background: var(--accent-purple);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--bg-sidebar);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .social-btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-sidebar);
+            transform: translateY(-3px);
+        }
+
+        /* --- SECCIÓN DERECHA (SCROLLABLE CONTENT) --- */
+        .main-content {
+            margin-left: 35%; /* Deja espacio para el sidebar */
+            width: 65%;
+            padding: 60px 80px;
+        }
+
+        .section-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            display: block;
+        }
+
+        /* --- Grid de Proyectos Modificado --- */
+        .projects-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        /* Tarjetas ahora son horizontales */
+        .project-card {
+            display: grid;
+            grid-template-columns: 80px 1fr; /* Icono | Contenido */
+            gap: 25px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .project-card:hover {
+            transform: translateX(10px); /* Efecto mover a derecha */
+            background: #4f5266;
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .card-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        /* Colores específicos por tarjeta */
+        .card-cola .card-icon { color: var(--accent-cyan); border: 1px solid rgba(139, 233, 253, 0.3); }
+        .card-pila .card-icon { color: var(--accent-pink); border: 1px solid rgba(255, 121, 198, 0.3); }
+        .card-arbol .card-icon { color: var(--accent-green); border: 1px solid rgba(80, 250, 123, 0.3); }
+
+        .card-content h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .card-content p {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tag {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.2);
+            color: var(--text-muted);
+        }
+
+        .btn-open {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+            padding-bottom: 2px;
+            border-bottom: 2px solid transparent;
+            transition: 0.3s;
+        }
+
+        .card-cola .btn-open { color: var(--accent-cyan); }
+        .card-pila .btn-open { color: var(--accent-pink); }
+        .card-arbol .btn-open { color: var(--accent-green); }
+
+        .card-cola .btn-open:hover { border-bottom-color: var(--accent-cyan); gap: 12px; }
+        .card-pila .btn-open:hover { border-bottom-color: var(--accent-pink); gap: 12px; }
+        .card-arbol .btn-open:hover { border-bottom-color: var(--accent-green); gap: 12px; }
+
+        /* --- INFO GRID (Estilo Bento) --- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .info-box {
+            background: rgba(0,0,0,0.2);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .info-box i {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--accent-purple);
+        }
+
+        .info-box h3 { font-size: 1rem; margin-bottom: 5px; }
+        .info-box p { font-size: 0.85rem; color: var(--text-muted); }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 40px 20px;
+                min-width: auto;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 40px 20px;
+            }
+
+            .header-content h1 { font-size: 2.5rem; }
+        }
+
+        @media (max-width: 600px) {
+            .project-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .card-icon { margin: 0 auto; }
+            .info-grid { grid-template-columns: 1fr; }
+            .feature-tags { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="header-content">
+            <h1>Estructuras<br>De Datos.</h1>
+            <p class="subtitle">
+                Una colección interactiva de algoritmos fundamentales visualizados para la web moderna.
+            </p>
+           
+            </div>
+        </div>
+
+       
+    </aside>
+
+    <main class="main-content">
+        
+        <span class="section-label">01 // Proyectos</span>
+        
+        <div class="projects-container">
+            
+            <article class="project-card card-cola">
+                <div class="card-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="card-content">
+                    <h2>Colas (Queues)</h2>
+                    <p>Implementación visual de estructuras FIFO. Incluye variantes circulares y manejo de desbordamiento de memoria en tiempo real.</p>
+                    <div class="feature-tags">
+                        <span class="tag">Circular</span>
+                        <span class="tag">FIFO / LIFO</span>
+                        <span class="tag">Visualización</span>
+                    </div>
+                    <a href="Colas/Colas.html" class="btn-open">
+                        Ver Proyecto <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="project-card card-pila">
+                <div class="card-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="card-content">
+                    <h2>Pilas (Stacks)</h2>
+                    <p>Sistema LIFO vertical. Observa cómo funciona el "Stack Pointer" con operaciones Push y Pop animadas fluidamente.</p>
+                    <div class="feature-tags">
+                        <span class="tag">Stack Pointer</span>
+                        <span class="tag">Push/Pop</span>
+                        <span class="tag">Vertical UI</span>
+                    </div>
+                    <a href="Pilas/Pilas.html" class="btn-open">
+                        Ver Proyecto <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+
+            <article class="project-card card-arbol">
+                <div class="card-icon">
+                    <i class="fas fa-tree"></i>
+                </div>
+                <div class="card-content">
+                    <h2>Árboles Binarios</h2>
+                    <p>Árboles de búsqueda (BST) complejos. Inserta nodos y observa cómo se organizan jerárquicamente de forma automática.</p>
+                    <div class="feature-tags">
+                        <span class="tag">Recorridos</span>
+                        <span class="tag">Nodos</span>
+                        <span class="tag">Recursividad</span>
+                    </div>
+                    <a href="Arboles/Arboles.html" class="btn-open">
+                        Ver Proyecto <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+        </div>
+
+        
+        </div>
+
+        <footer>
+        </footer>
+
+    </main>
+
+</body>
+</html>

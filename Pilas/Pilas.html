@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Objeto Multimedia Pilas - Glassmorphism</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Variables de Diseño (Tema Cyber/Glass) --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-blur: 12px;
+            
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            
+            /* Elementos de la Pila (Bloques de Energía) */
+            --item-grad-start: #d946ef; /* Magenta */
+            --item-grad-end: #8b5cf6;   /* Violeta */
+            --item-shadow: rgba(217, 70, 239, 0.5);
+            
+            /* Indicadores */
+            --color-tope: #22d3ee;      /* Cyan Neón */
+
+            /* Acciones */
+            --color-accent: #6366f1;
+            --color-danger: #ef4444;
+            --color-success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            font-size: 16px;
+            background-attachment: fixed;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #f472b6, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            text-shadow: 0 0 20px rgba(244, 114, 182, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        /* --- Contenedor Principal --- */
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- Visualización de la Pila --- */
+        .pila-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .capacity {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 15px;
+            border-radius: 12px;
+            width: fit-content;
+            margin: 0 auto 20px auto;
+            border: 1px solid var(--glass-border);
+        }
+
+        .capacity span {
+            color: var(--color-tope);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .tope-indicator {
+            background: rgba(34, 211, 238, 0.15);
+            color: var(--color-tope);
+            border: 1px solid var(--color-tope);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* El "Tubo" de la pila */
+        .pila {
+            width: 220px;
+            height: 350px; /* Altura fija para ver el efecto de llenado */
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0 0 16px 16px; /* Fondo redondeado */
+            border-left: 2px solid rgba(255,255,255,0.1);
+            border-right: 2px solid rgba(255,255,255,0.1);
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            /* Pila crece hacia arriba visualmente */
+            display: flex;
+            flex-direction: column-reverse; 
+            align-items: center;
+            padding: 10px;
+            position: relative;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.5);
+        }
+
+        /* Elementos individuales */
+        .elemento {
+            width: 90%;
+            min-height: 50px;
+            background: linear-gradient(135deg, var(--item-grad-start), var(--item-grad-end));
+            margin: 4px 0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+            box-shadow: 0 0 10px var(--item-shadow);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Animación de caída */
+        @keyframes dropIn {
+            0% { transform: translateY(-200px); opacity: 0; }
+            60% { transform: translateY(10px); opacity: 1; }
+            80% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+
+        .elemento {
+            animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Elemento destacado (Tope) */
+        .tope {
+            border: 2px solid var(--color-tope);
+            box-shadow: 0 0 20px var(--color-tope);
+            z-index: 2;
+        }
+
+        /* --- Inputs y Controles --- */
+        .input-group {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+
+        input {
+            padding: 15px 20px;
+            border: none;
+            width: 100%;
+            background: transparent;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .input-btn {
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 0 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            border-left: 1px solid var(--glass-border);
+        }
+
+        .input-btn:hover { 
+            background: #4f46e5; 
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button:not(.input-btn) {
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:not(.input-btn):hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #popBtn { 
+            background: rgba(239, 68, 68, 0.1); 
+            border-color: rgba(239, 68, 68, 0.3); 
+            color: #fca5a5; 
+        }
+        #popBtn:hover { 
+            background: rgba(239, 68, 68, 0.25); 
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        /* --- Mensajes de Estado --- */
+        .status {
+            text-align: center;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            backdrop-filter: blur(5px);
+            border: 1px solid transparent;
+        }
+
+        .info { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.2); }
+        .success { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.2); }
+        .error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.2); animation: shake 0.4s; }
+
+        /* --- Panel de Información --- */
+        .info-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid var(--glass-border);
+            flex-grow: 1;
+        }
+
+        .info-panel h3 {
+            margin-bottom: 15px;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-panel h3::before {
+            content: '\f0eb';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--color-tope);
+        }
+
+        .info-panel ul { list-style: none; }
+
+        .info-panel li {
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .info-panel li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--color-tope);
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        /* --- Footer --- */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* --- Responsiveness --- */
+        @media (max-width: 900px) {
+            .content { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .container { padding: 20px; }
+            .controls { grid-template-columns: 1fr; }
+            .input-btn { width: 100%; padding: 15px; }
+            .input-group { flex-direction: column; }
+            input { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Objeto Multimedia Pilas</h1>
+    <p class="subtitle">Estructura de datos interactiva con iterador Tope</p>
+    
+    <div class="container">
+        <div class="content">
+            <div class="left-panel">
+                <div class="capacity">Capacidad: <span id="capacity">10</span></div>
+
+                <div class="pila-container">
+                    <div class="tope-indicator"><i class="fas fa-arrow-down"></i> Tope</div>
+                    <div class="pila" id="pila">
+                        </div>
+                </div>
+
+                <div class="status info" id="status">
+                    <i class="fas fa-info-circle" style="margin-right: 8px;"></i> Presiona un botón para interactuar
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="elementoInput" placeholder="Ingresa un elemento" maxlength="15">
+                    <button class="input-btn" id="pushBtn">
+                        <i class="fas fa-plus"></i> Agregar (Push)
+                    </button>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="controls">
+                    <button id="popBtn">
+                        <i class="fas fa-minus"></i> Eliminar (Pop)
+                    </button>
+                    <button id="peekBtn">
+                        <i class="fas fa-eye"></i> Consultar Tope
+                    </button>
+                    <button id="sizeBtn">
+                        <i class="fas fa-ruler-vertical"></i> Tamaño Actual
+                    </button>
+                    <button id="clearBtn">
+                        <i class="fas fa-trash"></i> Vaciar Pila
+                    </button>
+                </div>
+
+                <div class="info-panel">
+                    <h3>Características</h3>
+                    <ul id="infoList">
+                        <li><strong>Iterador Tope:</strong> Siempre apunta al elemento superior de la pila.</li>
+                        <li><strong>Manejo de errores:</strong> Control visual de desbordamiento (overflow).</li>
+                        <li><strong>LIFO:</strong> Last-In-First-Out (Último en entrar, primero en salir).</li>
+                        <li><strong>Visualización:</strong> Efecto de gravedad y apilamiento dinámico.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Estructuras de Datos</p>
+    </footer>
+
+    <script>
+        // Clase Pila con iterador Tope
+        class Pila {
+            constructor(capacidad = 10) {
+                this.elementos = [];
+                this.capacidad = capacidad;
+                this.tope = -1; // Índice del elemento en la cima
+            }
+
+            // Agregar elemento a la pila
+            push(elemento) {
+                if (this.estaLlena()) {
+                    throw new Error("Desbordamiento: La pila está llena");
+                }
+
+                this.tope++;
+                this.elementos[this.tope] = elemento;
+                return true;
+            }
+
+            // Eliminar elemento de la pila
+            pop() {
+                if (this.estaVacia()) {
+                    throw new Error("Subdesbordamiento: La pila está vacía");
+                }
+
+                const elemento = this.elementos[this.tope];
+                this.tope--;
+                return elemento;
+            }
+
+            // Consultar el elemento en el tope
+            peek() {
+                if (this.estaVacia()) {
+                    throw new Error("La pila está vacía");
+                }
+
+                return this.elementos[this.tope];
+            }
+
+            // Obtener tamaño actual
+            size() {
+                return this.tope + 1;
+            }
+
+            // Verificar si está vacía
+            estaVacia() {
+                return this.tope === -1;
+            }
+
+            // Verificar si está llena
+            estaLlena() {
+                return this.tope === this.capacidad - 1;
+            }
+
+            // Vaciar la pila
+            clear() {
+                this.elementos = [];
+                this.tope = -1;
+            }
+
+            // Obtener todos los elementos (para visualización)
+            getElementos() {
+                return this.elementos.slice(0, this.tope + 1);
+            }
+        }
+
+        // Instancia de la pila
+        const pila = new Pila(10);
+
+        // Elementos DOM
+        const pilaElement = document.getElementById('pila');
+        const statusElement = document.getElementById('status');
+        const elementoInput = document.getElementById('elementoInput');
+        const pushBtn = document.getElementById('pushBtn');
+        const popBtn = document.getElementById('popBtn');
+        const peekBtn = document.getElementById('peekBtn');
+        const sizeBtn = document.getElementById('sizeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const capacityElement = document.getElementById('capacity');
+
+        // Actualizar visualización de la pila
+        function actualizarPila() {
+            pilaElement.innerHTML = '';
+            const elementos = pila.getElementos();
+
+            if (elementos.length === 0) {
+                // Opcional: Mostrar mensaje vacío dentro de la pila si se desea
+                return;
+            }
+
+            // Crear elementos visuales para cada elemento de la pila
+            elementos.forEach((elemento, index) => {
+                const div = document.createElement('div');
+                div.className = 'elemento';
+                div.textContent = elemento;
+
+                // Marcar el tope
+                if (index === elementos.length - 1) {
+                    div.classList.add('tope');
+                }
+
+                pilaElement.appendChild(div);
+            });
+        }
+
+        // Mostrar mensaje de estado
+        function mostrarMensaje(mensaje, tipo = 'info') {
+            let icon = 'info-circle';
+            if(tipo === 'success') icon = 'check-circle';
+            if(tipo === 'error') icon = 'exclamation-circle';
+
+            statusElement.innerHTML = `<i class="fas fa-${icon}"></i> ${mensaje}`;
+            statusElement.className = 'status ' + tipo;
+        }
+
+        // Event Listeners
+        pushBtn.addEventListener('click', () => {
+            const valor = elementoInput.value.trim();
+
+            if (valor === '') {
+                mostrarMensaje('Error: Ingresa un valor antes de agregar', 'error');
+                return;
+            }
+
+            try {
+                pila.push(valor);
+                mostrarMensaje(`Elemento "${valor}" agregado`, 'success');
+                elementoInput.value = '';
+                actualizarPila();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        });
+
+        popBtn.addEventListener('click', () => {
+            try {
+                const elemento = pila.pop();
+                mostrarMensaje(`Elemento "${elemento}" eliminado`, 'success');
+                actualizarPila();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        });
+
+        peekBtn.addEventListener('click', () => {
+            try {
+                const elemento = pila.peek();
+                mostrarMensaje(`Tope actual: "${elemento}"`, 'info');
+                
+                // Efecto visual extra para el tope
+                const topeEl = document.querySelector('.tope');
+                if(topeEl) {
+                    topeEl.style.transform = 'scale(1.1)';
+                    setTimeout(() => topeEl.style.transform = 'scale(1)', 200);
+                }
+
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        });
+
+        sizeBtn.addEventListener('click', () => {
+            const tamaño = pila.size();
+            mostrarMensaje(`Tamaño actual: ${tamaño}`, 'info');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            pila.clear();
+            mostrarMensaje('Pila vaciada', 'success');
+            actualizarPila();
+        });
+
+        // Permitir agregar con Enter
+        elementoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                pushBtn.click();
+            }
+        });
+
+        // Inicializar la visualización
+        actualizarPila();
+    </script>
+</body>
+</html>
